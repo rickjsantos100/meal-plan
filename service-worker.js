@@ -1,7 +1,7 @@
 const CACHE_NAME = 'healthy-recipes-v1';
 const ASSETS = [
     './',
-    './recipes.html',
+    './index.html',
     './manifest.json',
     './images/icon-192.png',
     './images/icon-512.png',
