@@ -1,4 +1,4 @@
-const CACHE_NAME = 'healthy-recipes-v1';
+const CACHE_NAME = 'healthy-recipes-v2';
 const ASSETS = [
     './',
     './index.html',
@@ -10,7 +10,15 @@ const ASSETS = [
     './images/bolognese.jpg',
     './images/chicken-curry.jpg',
     './images/veggie-quiche.jpg',
-    './images/bacalhau-bras-original.jpg'
+    './images/bacalhau-bras-original.jpg',
+    './images/fish-curry.jpg',
+    './images/moqueca.jpg',
+    './images/airfryer-roast-veggies.jpg',
+    './images/yogurt-nuts.jpg',
+    './images/hummus.jpg',
+    './images/energy-bites.jpg',
+    './images/apple-pb.jpg',
+    './images/cottage-cheese.jpg'
 ];
 
 self.addEventListener('install', event => {
