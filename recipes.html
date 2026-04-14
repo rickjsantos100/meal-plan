@@ -1,0 +1,875 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Healthy Recipes</title>
+    <link rel="manifest" href="manifest.json">
+    <meta name="theme-color" content="#2d6a4f">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="default">
+    <link rel="apple-touch-icon" href="images/icon-192.png">
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif;
+            background: #f8f7f4;
+            color: #2d2d2d;
+            line-height: 1.6;
+        }
+
+        header {
+            background: #fff;
+            border-bottom: 1px solid #e5e5e5;
+            padding: 1.5rem 2rem;
+            position: sticky;
+            top: 0;
+            z-index: 100;
+        }
+
+        header h1 {
+            font-size: 1.5rem;
+            font-weight: 700;
+            color: #1a1a1a;
+        }
+
+        header p {
+            font-size: 0.85rem;
+            color: #888;
+            margin-top: 0.25rem;
+        }
+
+        .controls {
+            display: flex;
+            gap: 0.75rem;
+            margin-top: 1rem;
+            flex-wrap: wrap;
+            align-items: center;
+        }
+
+        .controls input[type="text"] {
+            padding: 0.5rem 0.75rem;
+            border: 1px solid #ddd;
+            border-radius: 6px;
+            font-size: 0.9rem;
+            flex: 1;
+            min-width: 200px;
+        }
+
+        .tag-filters {
+            display: flex;
+            gap: 0.4rem;
+            flex-wrap: wrap;
+        }
+
+        .tag-filter {
+            padding: 0.3rem 0.7rem;
+            border: 1px solid #ddd;
+            border-radius: 20px;
+            font-size: 0.78rem;
+            cursor: pointer;
+            background: #fff;
+            transition: all 0.15s;
+            user-select: none;
+        }
+
+        .tag-filter:hover { border-color: #999; }
+        .tag-filter.active { background: #2d6a4f; color: #fff; border-color: #2d6a4f; }
+
+        .btn {
+            padding: 0.5rem 1rem;
+            border: none;
+            border-radius: 6px;
+            font-size: 0.85rem;
+            cursor: pointer;
+            font-weight: 600;
+            transition: all 0.15s;
+        }
+
+        .btn-primary { background: #2d6a4f; color: #fff; }
+        .btn-primary:hover { background: #1b4332; }
+        .btn-outline { background: #fff; color: #2d6a4f; border: 1px solid #2d6a4f; }
+        .btn-outline:hover { background: #f0f7f4; }
+
+        .grocery-bar {
+            display: none;
+            background: #2d6a4f;
+            color: #fff;
+            padding: 0.75rem 2rem;
+            position: sticky;
+            top: 0;
+            z-index: 101;
+            justify-content: space-between;
+            align-items: center;
+            font-size: 0.9rem;
+        }
+
+        .grocery-bar.visible { display: flex; }
+
+        .grocery-bar .count { font-weight: 700; }
+
+        main {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 2rem;
+        }
+
+        .recipe-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+            gap: 1.5rem;
+        }
+
+        .recipe-card {
+            background: #fff;
+            border-radius: 12px;
+            overflow: hidden;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.06);
+            transition: box-shadow 0.2s, transform 0.2s;
+            position: relative;
+        }
+
+        .recipe-card:hover { box-shadow: 0 4px 12px rgba(0,0,0,0.1); transform: translateY(-2px); }
+
+        .recipe-card.selected { outline: 3px solid #2d6a4f; }
+
+        .recipe-card .select-check {
+            position: absolute;
+            top: 0.75rem;
+            right: 0.75rem;
+            width: 28px;
+            height: 28px;
+            border-radius: 50%;
+            background: rgba(255,255,255,0.9);
+            border: 2px solid #ccc;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 0.8rem;
+            z-index: 2;
+            transition: all 0.15s;
+        }
+
+        .recipe-card.selected .select-check {
+            background: #2d6a4f;
+            border-color: #2d6a4f;
+            color: #fff;
+        }
+
+        .recipe-card img {
+            width: 100%;
+            height: 200px;
+            object-fit: cover;
+        }
+
+        .recipe-card .card-body { padding: 1.25rem; }
+
+        .recipe-card h2 { font-size: 1.1rem; font-weight: 700; margin-bottom: 0.4rem; }
+
+        .recipe-meta {
+            display: flex;
+            gap: 1rem;
+            font-size: 0.8rem;
+            color: #888;
+            margin-bottom: 0.75rem;
+        }
+
+        .recipe-tags {
+            display: flex;
+            gap: 0.3rem;
+            flex-wrap: wrap;
+            margin-bottom: 0.75rem;
+        }
+
+        .recipe-tag {
+            padding: 0.15rem 0.5rem;
+            background: #f0f7f4;
+            color: #2d6a4f;
+            border-radius: 12px;
+            font-size: 0.72rem;
+            font-weight: 600;
+        }
+
+        .recipe-card .description {
+            font-size: 0.85rem;
+            color: #666;
+            margin-bottom: 0.75rem;
+        }
+
+        .recipe-card .toggle-details {
+            font-size: 0.82rem;
+            color: #2d6a4f;
+            cursor: pointer;
+            font-weight: 600;
+            border: none;
+            background: none;
+            padding: 0;
+        }
+
+        .recipe-card .toggle-details:hover { text-decoration: underline; }
+
+        .recipe-details {
+            display: none;
+            padding: 0 1.25rem 1.25rem;
+        }
+
+        .recipe-details.open { display: block; }
+
+        .recipe-details h3 {
+            font-size: 0.85rem;
+            font-weight: 700;
+            margin: 0.75rem 0 0.4rem;
+            color: #555;
+            text-transform: uppercase;
+            letter-spacing: 0.03em;
+        }
+
+        .recipe-details ul {
+            padding-left: 1.2rem;
+            font-size: 0.85rem;
+        }
+
+        .recipe-details ol {
+            padding-left: 1.2rem;
+            font-size: 0.85rem;
+        }
+
+        .recipe-details li { margin-bottom: 0.3rem; }
+
+        /* Grocery List Modal */
+        .modal-overlay {
+            display: none;
+            position: fixed;
+            inset: 0;
+            background: rgba(0,0,0,0.5);
+            z-index: 200;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .modal-overlay.visible { display: flex; }
+
+        .modal {
+            background: #fff;
+            border-radius: 12px;
+            padding: 2rem;
+            max-width: 600px;
+            width: 90%;
+            max-height: 80vh;
+            overflow-y: auto;
+        }
+
+        .modal h2 { font-size: 1.25rem; margin-bottom: 1rem; }
+
+        .modal .grocery-section {
+            margin-bottom: 1rem;
+        }
+
+        .modal .grocery-section h3 {
+            font-size: 0.85rem;
+            font-weight: 700;
+            color: #2d6a4f;
+            text-transform: uppercase;
+            letter-spacing: 0.03em;
+            border-bottom: 1px solid #eee;
+            padding-bottom: 0.3rem;
+            margin-bottom: 0.5rem;
+        }
+
+        .modal .grocery-item {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            padding: 0.3rem 0;
+            font-size: 0.9rem;
+        }
+
+        .modal .grocery-item input[type="checkbox"] {
+            accent-color: #2d6a4f;
+        }
+
+        .modal .grocery-item.checked label {
+            text-decoration: line-through;
+            color: #aaa;
+        }
+
+        .modal-actions {
+            display: flex;
+            gap: 0.5rem;
+            margin-top: 1.5rem;
+            justify-content: flex-end;
+        }
+
+        .no-image {
+            width: 100%;
+            height: 200px;
+            background: linear-gradient(135deg, #e8f5e9, #c8e6c9);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 2.5rem;
+        }
+
+        @media (max-width: 640px) {
+            main { padding: 1rem; }
+            .recipe-grid { grid-template-columns: 1fr; }
+            .controls { flex-direction: column; }
+        }
+
+        @media print {
+            header, .grocery-bar, .controls, .select-check, .toggle-details { display: none !important; }
+            .modal-overlay { position: static; display: block !important; background: none; }
+            .modal { max-width: 100%; max-height: none; box-shadow: none; padding: 0; }
+        }
+    </style>
+</head>
+<body>
+
+<header>
+    <h1>Healthy Recipes</h1>
+    <p>Select recipes to build a grocery list for Pingo Doce</p>
+    <div class="controls">
+        <input type="text" id="search" placeholder="Search recipes...">
+        <div class="tag-filters" id="tagFilters"></div>
+    </div>
+</header>
+
+<div class="grocery-bar" id="groceryBar">
+    <span>Selected: <span class="count" id="selectedCount">0</span> recipes</span>
+    <div style="display:flex;gap:0.5rem;">
+        <button class="btn btn-outline" style="color:#fff;border-color:#fff;" onclick="clearSelection()">Clear</button>
+        <button class="btn" style="background:#fff;color:#2d6a4f;" onclick="showGroceryList()">View Grocery List</button>
+    </div>
+</div>
+
+<main>
+    <div class="recipe-grid" id="recipeGrid"></div>
+</main>
+
+<div class="modal-overlay" id="modalOverlay" onclick="closeModal(event)">
+    <div class="modal" id="modalContent"></div>
+</div>
+
+<script>
+const recipes = [
+    {
+        id: 1,
+        name: "Chicken & Cream Cheese Wraps",
+        description: "Fresh wraps loaded with seasoned chicken, cream cheese, crunchy vegetables, and spinach. Quick to assemble, great for lunch or dinner.",
+        image: "images/chicken-wrap.jpg",
+        emoji: "🌯",
+        prep: "15 min",
+        cook: "10 min",
+        servings: 2,
+        tags: ["quick", "high-protein", "lunch"],
+        ingredients: [
+            { item: "Flour tortilla wraps (large)", qty: "2", unit: "", category: "Bakery" },
+            { item: "Chicken breast", qty: "250", unit: "g", category: "Meat" },
+            { item: "Cream cheese (queijo creme)", qty: "60", unit: "g", category: "Dairy" },
+            { item: "Mayonnaise", qty: "1", unit: "tbsp", category: "Pantry" },
+            { item: "Baby spinach", qty: "50", unit: "g", category: "Vegetables" },
+            { item: "Tomato", qty: "1", unit: "medium", category: "Vegetables" },
+            { item: "Cucumber", qty: "0.5", unit: "", category: "Vegetables" },
+            { item: "Lemon juice", qty: "1", unit: "tsp", category: "Pantry" },
+            { item: "Olive oil", qty: "1", unit: "tbsp", category: "Pantry" },
+            { item: "Salt", qty: "", unit: "to taste", category: "Pantry" },
+            { item: "Black pepper", qty: "", unit: "to taste", category: "Pantry" },
+            { item: "Garlic powder", qty: "0.5", unit: "tsp (optional)", category: "Pantry" },
+            { item: "Smoked paprika (pimentão doce fumado)", qty: "0.5", unit: "tsp (optional)", category: "Pantry" }
+        ],
+        steps: [
+            "Season chicken breast with salt, pepper, and optionally garlic powder and smoked paprika. Cook in olive oil over medium-high heat, about 4-5 min per side until cooked through. Let rest 3 min, then slice thinly.",
+            "Mix cream cheese with mayonnaise and a squeeze of lemon juice until smooth.",
+            "Slice tomato and cucumber thinly.",
+            "Warm tortillas briefly in a dry pan or microwave (10 sec) so they're pliable.",
+            "Spread cream cheese mixture generously over each wrap.",
+            "Layer spinach leaves, then sliced chicken, tomato, and cucumber.",
+            "Roll tightly: fold bottom edge up, fold sides in, then roll forward. Cut in half diagonally."
+        ]
+    },
+    {
+        id: 2,
+        name: "Air Fryer Chicken Legs with Couscous Salad",
+        description: "Crispy, juicy chicken legs from the air fryer paired with a fresh couscous salad loaded with spinach, tomato, and cucumber.",
+        image: "images/airfryer-chicken-legs-couscous.jpg",
+        emoji: "🍗",
+        prep: "10 min",
+        cook: "25 min",
+        servings: 2,
+        tags: ["high-protein", "air-fryer", "dinner"],
+        ingredients: [
+            { item: "Chicken legs (coxas de frango)", qty: "4", unit: "", category: "Meat" },
+            { item: "Olive oil", qty: "1", unit: "tbsp", category: "Pantry" },
+            { item: "Salt", qty: "", unit: "to taste", category: "Pantry" },
+            { item: "Black pepper", qty: "", unit: "to taste", category: "Pantry" },
+            { item: "Garlic powder", qty: "1", unit: "tsp (optional)", category: "Pantry" },
+            { item: "Smoked paprika (pimentão doce fumado)", qty: "1", unit: "tsp (optional)", category: "Pantry" },
+            { item: "Couscous", qty: "150", unit: "g", category: "Pantry" },
+            { item: "Boiling water or chicken stock", qty: "150", unit: "ml", category: "Pantry" },
+            { item: "Baby spinach", qty: "50", unit: "g", category: "Vegetables" },
+            { item: "Tomato", qty: "1", unit: "medium", category: "Vegetables" },
+            { item: "Cucumber", qty: "0.5", unit: "", category: "Vegetables" },
+            { item: "Olive oil (for salad)", qty: "1", unit: "tbsp", category: "Pantry" },
+            { item: "Lemon juice", qty: "1", unit: "tbsp (optional)", category: "Pantry" }
+        ],
+        steps: [
+            "Pat chicken legs dry. Rub with olive oil, salt, pepper, and optionally garlic powder and smoked paprika.",
+            "Preheat air fryer to 200°C. Place chicken legs skin-side down, cook 12 min. Flip and cook another 12-13 min until skin is crispy and internal temp reaches 75°C.",
+            "While chicken cooks, place couscous in a bowl. Pour equal amount of boiling water (or stock) over it. Cover with plate/cling film and let sit 5 min. Fluff with fork.",
+            "Dice tomato and cucumber. Toss into couscous along with baby spinach leaves.",
+            "Drizzle salad with olive oil, season with salt and pepper. Optionally add lemon juice for brightness.",
+            "Serve chicken legs alongside couscous salad."
+        ]
+    },
+    {
+        id: 3,
+        name: "Healthy Turkey & Lentil Bolognese",
+        description: "A lighter bolognese packed with hidden vegetables and lentils for extra fiber. Turkey keeps it lean, and it tastes even better the next day.",
+        image: "images/bolognese.jpg",
+        emoji: "🍝",
+        prep: "15 min",
+        cook: "40 min",
+        servings: 6,
+        tags: ["high-protein", "high-fiber", "leftovers", "batch-cook", "dinner"],
+        ingredients: [
+            { item: "Ground turkey (peru picado)", qty: "400", unit: "g", category: "Meat" },
+            { item: "Green or brown lentils (lentilhas)", qty: "100", unit: "g (dry)", category: "Pantry" },
+            { item: "Onion", qty: "1", unit: "large", category: "Vegetables" },
+            { item: "Carrot (grated)", qty: "2", unit: "medium", category: "Vegetables" },
+            { item: "Courgette (courgete, grated)", qty: "1", unit: "medium", category: "Vegetables" },
+            { item: "Celery (aipo)", qty: "2", unit: "stalks", category: "Vegetables" },
+            { item: "Garlic", qty: "3", unit: "cloves", category: "Vegetables" },
+            { item: "Canned crushed tomato (polpa de tomate)", qty: "400", unit: "g", category: "Canned Goods" },
+            { item: "Tomato paste (concentrado de tomate)", qty: "2", unit: "tbsp", category: "Pantry" },
+            { item: "Olive oil", qty: "1", unit: "tbsp", category: "Pantry" },
+            { item: "Dried oregano", qty: "1", unit: "tsp", category: "Pantry" },
+            { item: "Bay leaf", qty: "1", unit: "", category: "Pantry" },
+            { item: "Salt", qty: "", unit: "to taste", category: "Pantry" },
+            { item: "Black pepper", qty: "", unit: "to taste", category: "Pantry" },
+            { item: "Whole wheat pasta (massa integral)", qty: "400", unit: "g", category: "Pantry" }
+        ],
+        steps: [
+            "Cook lentils in boiling water for 20 min until tender. Drain and set aside.",
+            "Heat olive oil in a large pot over medium heat. Sauté diced onion, grated carrot, grated courgette, and diced celery for 5-7 min until soft.",
+            "Add minced garlic, cook 1 min until fragrant.",
+            "Add ground turkey, break apart with a spoon, cook until browned (5-6 min).",
+            "Stir in crushed tomato, tomato paste, oregano, and bay leaf. Season with salt and pepper.",
+            "Add cooked lentils. Simmer on low heat 15-20 min, stirring occasionally. Add a splash of water if sauce gets too thick.",
+            "Cook whole wheat pasta according to package directions. Serve sauce generously over pasta."
+        ]
+    },
+    {
+        id: 4,
+        name: "Chicken Curry with Rice",
+        description: "Creamy coconut chicken curry with spinach, served over fluffy rice. One pan for the curry, reheats perfectly for lunch the next day.",
+        image: "images/chicken-curry.jpg",
+        emoji: "🍛",
+        prep: "10 min",
+        cook: "30 min",
+        servings: 4,
+        tags: ["one-pot", "high-protein", "dinner", "leftovers"],
+        ingredients: [
+            { item: "Chicken thighs (boneless, skinless)", qty: "500", unit: "g", category: "Meat" },
+            { item: "Coconut milk (leite de coco)", qty: "400", unit: "ml", category: "Canned Goods" },
+            { item: "Onion", qty: "1", unit: "large", category: "Vegetables" },
+            { item: "Garlic", qty: "3", unit: "cloves", category: "Vegetables" },
+            { item: "Fresh ginger (gengibre, grated)", qty: "1", unit: "tbsp", category: "Vegetables" },
+            { item: "Canned diced tomato", qty: "200", unit: "g", category: "Canned Goods" },
+            { item: "Curry powder", qty: "2", unit: "tbsp", category: "Pantry" },
+            { item: "Turmeric (curcuma)", qty: "1", unit: "tsp", category: "Pantry" },
+            { item: "Baby spinach", qty: "100", unit: "g", category: "Vegetables" },
+            { item: "Basmati rice", qty: "300", unit: "g", category: "Pantry" },
+            { item: "Olive oil", qty: "1", unit: "tbsp", category: "Pantry" },
+            { item: "Salt", qty: "", unit: "to taste", category: "Pantry" },
+            { item: "Fresh coriander (coentros)", qty: "", unit: "for garnish", category: "Herbs" }
+        ],
+        steps: [
+            "Cut chicken thighs into bite-size pieces. Season with salt, half the curry powder, and turmeric.",
+            "Heat olive oil in a large pan over medium-high heat. Brown chicken pieces 3-4 min per side. Remove and set aside.",
+            "In the same pan, sauté diced onion 3-4 min. Add garlic and ginger, cook 1 min.",
+            "Add remaining curry powder, stir 30 sec until fragrant.",
+            "Pour in coconut milk and diced tomato. Stir and bring to a simmer.",
+            "Return chicken to pan. Simmer 15 min until chicken is cooked through and sauce thickens.",
+            "Stir in baby spinach, let wilt 2 min. Adjust salt to taste.",
+            "Cook rice according to package. Serve curry over rice, garnish with fresh coriander."
+        ]
+    },
+    {
+        id: 5,
+        name: "Vegetable Quiche",
+        description: "Golden, flaky quiche loaded with spinach, mushrooms, and cherry tomatoes. Great warm or cold straight from the fridge — perfect lunch leftovers.",
+        image: "images/veggie-quiche.jpg",
+        emoji: "🥧",
+        prep: "15 min",
+        cook: "35 min",
+        servings: 6,
+        tags: ["vegetarian", "oven", "lunch", "leftovers"],
+        ingredients: [
+            { item: "Puff pastry sheet (massa folhada)", qty: "1", unit: "sheet", category: "Bakery" },
+            { item: "Eggs", qty: "4", unit: "", category: "Dairy" },
+            { item: "Light cooking cream (natas light)", qty: "200", unit: "ml", category: "Dairy" },
+            { item: "Baby spinach", qty: "100", unit: "g", category: "Vegetables" },
+            { item: "Mushrooms (cogumelos, sliced)", qty: "150", unit: "g", category: "Vegetables" },
+            { item: "Onion", qty: "1", unit: "medium", category: "Vegetables" },
+            { item: "Cherry tomatoes (halved)", qty: "100", unit: "g", category: "Vegetables" },
+            { item: "Grated cheese (queijo ralado)", qty: "80", unit: "g", category: "Dairy" },
+            { item: "Olive oil", qty: "1", unit: "tsp", category: "Pantry" },
+            { item: "Salt", qty: "", unit: "to taste", category: "Pantry" },
+            { item: "Black pepper", qty: "", unit: "to taste", category: "Pantry" },
+            { item: "Nutmeg (noz-moscada)", qty: "1", unit: "pinch", category: "Pantry" }
+        ],
+        steps: [
+            "Preheat oven to 180°C. Line a quiche or tart dish with puff pastry, prick base with a fork.",
+            "Heat olive oil in a pan. Sauté diced onion and sliced mushrooms 4-5 min until softened.",
+            "Add spinach, stir until wilted (1-2 min). Remove from heat.",
+            "Whisk eggs with cream, salt, pepper, and a pinch of nutmeg.",
+            "Spread sautéed vegetables evenly over the pastry base. Pour egg mixture over.",
+            "Scatter cherry tomato halves and grated cheese on top.",
+            "Bake 30-35 min until set and golden on top. Let cool 5 min before slicing."
+        ]
+    },
+    {
+        id: 6,
+        name: "Bacalhau à Brás (Original)",
+        description: "Classic Portuguese comfort food — shredded cod with scrambled eggs, straw potatoes, and olives. A Lisbon icon that reheats wonderfully in a pan.",
+        image: "images/bacalhau-bras-original.jpg",
+        emoji: "🐟",
+        prep: "20 min",
+        cook: "15 min",
+        servings: 4,
+        tags: ["portuguese", "high-protein", "dinner", "leftovers"],
+        ingredients: [
+            { item: "Shredded salted cod (bacalhau desfiado)", qty: "400", unit: "g", category: "Fish" },
+            { item: "Eggs", qty: "6", unit: "", category: "Dairy" },
+            { item: "Straw potatoes (batata palha)", qty: "100", unit: "g", category: "Pantry" },
+            { item: "Onion", qty: "2", unit: "large", category: "Vegetables" },
+            { item: "Garlic", qty: "3", unit: "cloves", category: "Vegetables" },
+            { item: "Olive oil", qty: "3", unit: "tbsp", category: "Pantry" },
+            { item: "Black olives (azeitonas pretas)", qty: "60", unit: "g", category: "Pantry" },
+            { item: "Fresh parsley (salsa, chopped)", qty: "2", unit: "tbsp", category: "Herbs" },
+            { item: "Salt", qty: "", unit: "to taste", category: "Pantry" },
+            { item: "Black pepper", qty: "", unit: "to taste", category: "Pantry" }
+        ],
+        steps: [
+            "If using dried salted cod, soak in water 24-48h, changing water 3-4 times. Boil 15 min, drain, remove skin and bones, shred finely.",
+            "Heat olive oil in a large non-stick pan. Sauté thinly sliced onions on medium-low heat 8-10 min until soft and translucent.",
+            "Add minced garlic, cook 1 min. Add shredded cod, stir and cook 3-4 min.",
+            "Beat eggs lightly in a bowl with black pepper.",
+            "Add straw potatoes to pan, stir to combine with cod and onion.",
+            "Pour beaten eggs over the mixture. Stir gently with a wooden spoon, like scrambled eggs, until eggs are just set but still creamy (2-3 min). Do not overcook.",
+            "Garnish with black olives and chopped parsley. Serve immediately."
+        ]
+    },
+    {
+        id: 7,
+        name: "Fish & Vegetable Curry with Rice",
+        description: "White fish in a creamy coconut curry with broccoli and carrots. One pan, 30 min, reheats perfectly for lunch the next day.",
+        image: "images/fish-curry.jpg",
+        emoji: "🍛",
+        prep: "10 min",
+        cook: "25 min",
+        servings: 4,
+        tags: ["one-pot", "high-protein", "dinner", "leftovers"],
+        ingredients: [
+            { item: "White fish fillets — hake or cod (pescada ou bacalhau fresco)", qty: "500", unit: "g", category: "Fish" },
+            { item: "Coconut milk (leite de coco)", qty: "400", unit: "ml", category: "Canned Goods" },
+            { item: "Broccoli (cut into florets)", qty: "200", unit: "g", category: "Vegetables" },
+            { item: "Carrots (sliced)", qty: "2", unit: "medium", category: "Vegetables" },
+            { item: "Onion", qty: "1", unit: "large", category: "Vegetables" },
+            { item: "Garlic", qty: "3", unit: "cloves", category: "Vegetables" },
+            { item: "Fresh ginger (gengibre, grated)", qty: "1", unit: "tbsp", category: "Vegetables" },
+            { item: "Canned diced tomato", qty: "200", unit: "g", category: "Canned Goods" },
+            { item: "Curry powder", qty: "2", unit: "tbsp", category: "Pantry" },
+            { item: "Turmeric (curcuma)", qty: "1", unit: "tsp", category: "Pantry" },
+            { item: "Olive oil", qty: "1", unit: "tbsp", category: "Pantry" },
+            { item: "Basmati rice", qty: "300", unit: "g", category: "Pantry" },
+            { item: "Salt", qty: "", unit: "to taste", category: "Pantry" },
+            { item: "Fresh coriander (coentros)", qty: "", unit: "for garnish", category: "Herbs" },
+            { item: "Lemon juice", qty: "1", unit: "tbsp", category: "Pantry" }
+        ],
+        steps: [
+            "Cut fish into large bite-size chunks. Season lightly with salt and a pinch of turmeric.",
+            "Heat olive oil in a large pan over medium heat. Sauté diced onion 3-4 min until soft.",
+            "Add garlic and ginger, cook 1 min. Add curry powder and remaining turmeric, stir 30 sec until fragrant.",
+            "Add sliced carrots and diced tomato. Cook 3 min.",
+            "Pour in coconut milk, stir and bring to a gentle simmer.",
+            "Add broccoli florets, cook 5 min until just starting to soften.",
+            "Nestle fish chunks into the sauce. Cover and simmer 8-10 min until fish is cooked through and flakes easily. Avoid stirring too much — gently spoon sauce over fish instead.",
+            "Squeeze lemon juice over. Cook rice according to package. Serve curry over rice, garnish with fresh coriander."
+        ]
+    },
+    {
+        id: 8,
+        name: "Moqueca (Brazilian Fish Stew)",
+        description: "Rich, fragrant Brazilian stew with white fish, coconut milk, tomatoes, and peppers. Vibrant flavours, one pot, and even better the next day.",
+        image: "images/moqueca.jpg",
+        emoji: "🍲",
+        prep: "15 min",
+        cook: "25 min",
+        servings: 4,
+        tags: ["one-pot", "high-protein", "dinner", "leftovers"],
+        ingredients: [
+            { item: "White fish fillets — hake or cod (pescada ou bacalhau fresco)", qty: "600", unit: "g", category: "Fish" },
+            { item: "Coconut milk (leite de coco)", qty: "400", unit: "ml", category: "Canned Goods" },
+            { item: "Bell pepper (red)", qty: "1", unit: "large", category: "Vegetables" },
+            { item: "Bell pepper (yellow or green)", qty: "1", unit: "large", category: "Vegetables" },
+            { item: "Onion", qty: "1", unit: "large", category: "Vegetables" },
+            { item: "Tomato", qty: "3", unit: "medium", category: "Vegetables" },
+            { item: "Garlic", qty: "4", unit: "cloves", category: "Vegetables" },
+            { item: "Lime juice", qty: "2", unit: "tbsp", category: "Pantry" },
+            { item: "Olive oil", qty: "2", unit: "tbsp", category: "Pantry" },
+            { item: "Fresh coriander (coentros)", qty: "1", unit: "bunch", category: "Herbs" },
+            { item: "Sweet paprika (pimentão doce)", qty: "1", unit: "tsp", category: "Pantry" },
+            { item: "Cumin", qty: "0.5", unit: "tsp", category: "Pantry" },
+            { item: "Salt", qty: "", unit: "to taste", category: "Pantry" },
+            { item: "Black pepper", qty: "", unit: "to taste", category: "Pantry" },
+            { item: "Basmati rice", qty: "300", unit: "g", category: "Pantry" }
+        ],
+        steps: [
+            "Cut fish into large chunks. Marinate with lime juice, salt, pepper, and minced garlic for 10 min while you prep vegetables.",
+            "Slice onion into half-rings. Cut peppers into strips. Dice tomatoes.",
+            "Heat olive oil in a large deep pan or pot over medium heat. Sauté onion 3-4 min until soft.",
+            "Layer sliced peppers over onion. Add diced tomatoes on top. Season with paprika and cumin.",
+            "Place marinated fish chunks over the vegetables. Pour coconut milk over everything.",
+            "Cover and simmer on medium-low heat 20-25 min until fish is cooked through. Do not stir — gently shake the pot occasionally to prevent sticking.",
+            "Scatter chopped coriander generously on top. Cook rice according to package. Serve stew over rice."
+        ]
+    },
+    {
+        id: 9,
+        name: "Air Fryer Roasted Vegetables",
+        description: "Crispy, caramelised vegetables straight from the air fryer. Minimal oil, maximum flavour. Great as a side or toss with pasta, rice, or couscous for a full meal.",
+        image: "images/airfryer-roast-veggies.jpg",
+        emoji: "🥦",
+        prep: "10 min",
+        cook: "20 min",
+        servings: 4,
+        tags: ["air-fryer", "vegetarian", "easy", "leftovers", "high-fiber"],
+        ingredients: [
+            { item: "Broccoli (cut into florets)", qty: "200", unit: "g", category: "Vegetables" },
+            { item: "Carrots (sliced diagonally)", qty: "2", unit: "medium", category: "Vegetables" },
+            { item: "Courgette (courgete, diced)", qty: "1", unit: "medium", category: "Vegetables" },
+            { item: "Bell pepper (any colour, diced)", qty: "1", unit: "large", category: "Vegetables" },
+            { item: "Red onion (cut into wedges)", qty: "1", unit: "medium", category: "Vegetables" },
+            { item: "Cherry tomatoes", qty: "100", unit: "g", category: "Vegetables" },
+            { item: "Olive oil", qty: "1.5", unit: "tbsp", category: "Pantry" },
+            { item: "Garlic powder", qty: "1", unit: "tsp", category: "Pantry" },
+            { item: "Smoked paprika (pimentão doce fumado)", qty: "1", unit: "tsp", category: "Pantry" },
+            { item: "Dried oregano", qty: "0.5", unit: "tsp", category: "Pantry" },
+            { item: "Salt", qty: "", unit: "to taste", category: "Pantry" },
+            { item: "Black pepper", qty: "", unit: "to taste", category: "Pantry" },
+            { item: "Lemon juice", qty: "1", unit: "tbsp (optional)", category: "Pantry" }
+        ],
+        steps: [
+            "Cut all vegetables into similar-sized pieces so they cook evenly. Keep broccoli florets small, carrots in thin diagonal slices.",
+            "Toss vegetables in a large bowl with olive oil, garlic powder, smoked paprika, oregano, salt, and pepper until evenly coated.",
+            "Preheat air fryer to 190°C.",
+            "Add vegetables to air fryer basket in a single layer — don't overcrowd. Cook in batches if needed.",
+            "Cook 15-20 min, shaking basket halfway through. Add cherry tomatoes in the last 5 min so they don't burst too early.",
+            "Squeeze lemon juice over if desired. Serve as a side, or toss with couscous, pasta, or rice for a full meal."
+        ]
+    }
+];
+
+// --- State ---
+let selectedRecipes = new Set();
+let activeTagFilters = new Set();
+
+// --- Render ---
+function getAllTags() {
+    const tags = new Set();
+    recipes.forEach(r => r.tags.forEach(t => tags.add(t)));
+    return [...tags].sort();
+}
+
+function renderTagFilters() {
+    const container = document.getElementById('tagFilters');
+    container.innerHTML = getAllTags().map(tag =>
+        `<span class="tag-filter ${activeTagFilters.has(tag) ? 'active' : ''}" onclick="toggleTagFilter('${tag}')">${tag}</span>`
+    ).join('');
+}
+
+function toggleTagFilter(tag) {
+    if (activeTagFilters.has(tag)) activeTagFilters.delete(tag);
+    else activeTagFilters.add(tag);
+    renderTagFilters();
+    renderRecipes();
+}
+
+function getFilteredRecipes() {
+    const query = document.getElementById('search').value.toLowerCase();
+    return recipes.filter(r => {
+        const matchesSearch = !query ||
+            r.name.toLowerCase().includes(query) ||
+            r.description.toLowerCase().includes(query) ||
+            r.ingredients.some(i => i.item.toLowerCase().includes(query)) ||
+            r.tags.some(t => t.includes(query));
+        const matchesTags = activeTagFilters.size === 0 ||
+            [...activeTagFilters].every(t => r.tags.includes(t));
+        return matchesSearch && matchesTags;
+    });
+}
+
+function renderRecipes() {
+    const grid = document.getElementById('recipeGrid');
+    const filtered = getFilteredRecipes();
+    grid.innerHTML = filtered.map(r => `
+        <div class="recipe-card ${selectedRecipes.has(r.id) ? 'selected' : ''}" id="card-${r.id}">
+            <div class="select-check" onclick="toggleSelect(${r.id})">${selectedRecipes.has(r.id) ? '✓' : ''}</div>
+            ${r.image
+                ? `<img src="${r.image}" alt="${r.name}" loading="lazy">`
+                : `<div class="no-image">${r.emoji || '🍽️'}</div>`
+            }
+            <div class="card-body">
+                <h2>${r.name}</h2>
+                <div class="recipe-meta">
+                    <span>Prep: ${r.prep}</span>
+                    <span>Cook: ${r.cook}</span>
+                    <span>Serves ${r.servings}</span>
+                </div>
+                <div class="recipe-tags">
+                    ${r.tags.map(t => `<span class="recipe-tag">${t}</span>`).join('')}
+                </div>
+                <p class="description">${r.description}</p>
+                <button class="toggle-details" onclick="toggleDetails(${r.id})">Show ingredients & steps</button>
+            </div>
+            <div class="recipe-details" id="details-${r.id}">
+                <h3>Ingredients</h3>
+                <ul>
+                    ${r.ingredients.map(i => `<li>${i.qty} ${i.unit} ${i.item}</li>`).join('')}
+                </ul>
+                <h3>Steps</h3>
+                <ol>
+                    ${r.steps.map(s => `<li>${s}</li>`).join('')}
+                </ol>
+            </div>
+        </div>
+    `).join('');
+}
+
+function toggleDetails(id) {
+    const el = document.getElementById(`details-${id}`);
+    el.classList.toggle('open');
+    const btn = el.previousElementSibling.querySelector('.toggle-details');
+    btn.textContent = el.classList.contains('open') ? 'Hide details' : 'Show ingredients & steps';
+}
+
+function toggleSelect(id) {
+    if (selectedRecipes.has(id)) selectedRecipes.delete(id);
+    else selectedRecipes.add(id);
+    updateGroceryBar();
+    renderRecipes();
+}
+
+function clearSelection() {
+    selectedRecipes.clear();
+    updateGroceryBar();
+    renderRecipes();
+}
+
+function updateGroceryBar() {
+    const bar = document.getElementById('groceryBar');
+    const count = document.getElementById('selectedCount');
+    count.textContent = selectedRecipes.size;
+    bar.classList.toggle('visible', selectedRecipes.size > 0);
+}
+
+// --- Grocery List ---
+function buildGroceryList() {
+    const combined = {};
+    recipes.filter(r => selectedRecipes.has(r.id)).forEach(r => {
+        r.ingredients.forEach(ing => {
+            const key = ing.item.toLowerCase();
+            if (!combined[key]) {
+                combined[key] = { item: ing.item, entries: [], category: ing.category };
+            }
+            const label = `${ing.qty} ${ing.unit}`.trim();
+            if (label) combined[key].entries.push(label);
+        });
+    });
+
+    // Group by category
+    const grouped = {};
+    Object.values(combined).forEach(v => {
+        const cat = v.category || 'Other';
+        if (!grouped[cat]) grouped[cat] = [];
+        const amounts = v.entries.length ? v.entries.join(' + ') : '';
+        grouped[cat].push({ item: v.item, amounts });
+    });
+
+    return grouped;
+}
+
+function showGroceryList() {
+    const grouped = buildGroceryList();
+    const overlay = document.getElementById('modalOverlay');
+    const content = document.getElementById('modalContent');
+
+    const selectedNames = recipes.filter(r => selectedRecipes.has(r.id)).map(r => r.name);
+
+    let html = `<h2>Grocery List — Pingo Doce</h2>`;
+    html += `<p style="font-size:0.82rem;color:#888;margin-bottom:1rem;">For: ${selectedNames.join(', ')}</p>`;
+
+    const categoryOrder = ['Vegetables', 'Fruit', 'Herbs', 'Fish', 'Meat', 'Deli', 'Dairy', 'Bakery', 'Canned Goods', 'Pantry', 'Other'];
+    const sortedCategories = Object.keys(grouped).sort((a, b) =>
+        (categoryOrder.indexOf(a) === -1 ? 99 : categoryOrder.indexOf(a)) -
+        (categoryOrder.indexOf(b) === -1 ? 99 : categoryOrder.indexOf(b))
+    );
+
+    sortedCategories.forEach(cat => {
+        html += `<div class="grocery-section"><h3>${cat}</h3>`;
+        grouped[cat].forEach((g, i) => {
+            const id = `gi-${cat}-${i}`;
+            html += `<div class="grocery-item" id="${id}">
+                <input type="checkbox" onchange="document.getElementById('${id}').classList.toggle('checked')">
+                <label>${g.item}${g.amounts ? ' — ' + g.amounts : ''}</label>
+            </div>`;
+        });
+        html += `</div>`;
+    });
+
+    html += `<div class="modal-actions">
+        <button class="btn btn-outline" onclick="copyGroceryList()">Copy as text</button>
+        <button class="btn btn-primary" onclick="document.getElementById('modalOverlay').classList.remove('visible')">Close</button>
+    </div>`;
+
+    content.innerHTML = html;
+    overlay.classList.add('visible');
+}
+
+function copyGroceryList() {
+    const grouped = buildGroceryList();
+    let text = "GROCERY LIST — PINGO DOCE\n\n";
+    Object.entries(grouped).forEach(([cat, items]) => {
+        text += `${cat.toUpperCase()}\n`;
+        items.forEach(g => {
+            text += `  [ ] ${g.item}${g.amounts ? ' — ' + g.amounts : ''}\n`;
+        });
+        text += '\n';
+    });
+    navigator.clipboard.writeText(text).then(() => {
+        const btn = document.querySelector('.modal-actions .btn-outline');
+        btn.textContent = 'Copied!';
+        setTimeout(() => btn.textContent = 'Copy as text', 2000);
+    });
+}
+
+function closeModal(e) {
+    if (e.target === document.getElementById('modalOverlay')) {
+        document.getElementById('modalOverlay').classList.remove('visible');
+    }
+}
+
+// --- Init ---
+document.getElementById('search').addEventListener('input', renderRecipes);
+renderTagFilters();
+renderRecipes();
+
+if ('serviceWorker' in navigator) {
+    navigator.serviceWorker.register('service-worker.js');
+}
+</script>
+</body>
+</html>

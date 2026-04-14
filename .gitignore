@@ -1,0 +1,6 @@
+node_modules/
+qa-screenshots/
+test-results/
+package*.json
+playwright.config.js
+qa-test.spec.js
